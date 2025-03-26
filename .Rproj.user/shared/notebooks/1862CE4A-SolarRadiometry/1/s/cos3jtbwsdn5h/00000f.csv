@@ -1,0 +1,48 @@
+"0",""
+"0","# Load necessary package"
+"0","if (!require('dplyr')) install.packages('dplyr'); library('dplyr')"
+"2","Loading required package: dplyr
+"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","# Number of Monte Carlo iterations"
+"0","n <- 10000"
+"0",""
+"0","# Assuming normal distributions for all variables"
+"0","# Replace mean and sd with actual values for each variable"
+"0","R_samples <- rnorm(n, mean = 290, sd = 0)"
+"0","N_samples <- rnorm(n, mean = 412.97, sd = 11.05)"
+"0","D_samples <- rnorm(n, mean = 9.32, sd = 0.33)"
+"0","a_samples <- rnorm(n, mean = 29.71, sd = 0.08)"
+"0","b_samples <- rnorm(n, mean = 39.35, sd = 0.19)"
+"0",""
+"0","# Function to calculate T"
+"0","calculate_T <- function(R, N, D, a, b) {"
+"0","  x <- 10^((D - a) / b)"
+"0","  T <- R * x + N * x - N"
+"0","  return(T)"
+"0","}"
+"0",""
+"0","# Calculate T for each set of samples"
+"0","T_samples <- mapply(calculate_T, R_samples, N_samples, D_samples, a_samples, b_samples)"
+"0",""
+"0","# Analyze the results"
+"0","summary_stats <- data.frame(T_samples) %>%"
+"0","  summarise(Mean = mean(T_samples),"
+"0","            SD = sd(T_samples),"
+"0","            Lower_95_CI = quantile(T_samples, 0.025),"
+"0","            Upper_95_CI = quantile(T_samples, 0.975))"
+"0",""
+"0","print(summary_stats)"

@@ -1,0 +1,549 @@
+---
+title: "SolarRadiometry"
+---
+
+Importing Relevant Libraries 
+
+```{r}
+library(tidyverse)
+library(scales)
+library(ggplot2)
+library(dplyr) 
+
+```
+
+Type HR- Attenuation DB vs Acutract 22 Power Reading
+
+```{r}
+attenuators_HR <- c("none", "FAMP-3HR", "FAMP-6HR", "S-FAMP-9HR", "S-FAMP-12HR", "S-FAMP-13HR", "S-FAMP-16HR")
+power_valHR <- c(29.7, 16.9, 6.09, 2.87, 2.59, 2.5, 2.5)
+attn_valHR <- c(0, -3, -6, -9, -12, -13, -16)
+solar_attenuationHr <- data.frame(attenuators_HR, power_valHR, attn_valHR)
+
+filtered_data <- solar_attenuationHr %>% filter(row_number() <= 3)
+lm_model <- lm(power_valHR ~ attn_valHR, data = filtered_data)
+
+coefficients <- coef(lm_model)
+print(paste("Intercept of the linear model:", coefficients[1]))
+print(paste("Slope of the linear model:", coefficients[2]))
+
+summary_lm <- summary(lm_model)
+r_squared <- summary_lm$r.squared
+slope_se <- summary_lm$coefficients["attn_valHR", "Std. Error"]
+print(paste("Standard error of the slope:", slope_se))
+print(paste("R-squared of the linear model:", r_squared))
+
+predictions <- predict(lm_model, filtered_data)
+mse <- mean((filtered_data$power_valHR - predictions)^2)
+print(paste("MSE of the linear model:", mse))
+
+ggplot(data = solar_attenuationHr, mapping = aes(x = attn_valHR, y = power_valHR)) +
+  geom_point() +
+  geom_smooth(data = filtered_data, method = "lm", aes(x = attn_valHR, y = power_valHR))+
+  labs(
+    x = "Attenuation Value in DB",
+    y = "Power Reading on Accutrac",
+    title = "Figure 5 - FAMP-HR Attenuators vs Accutrac 22 Power Reading",
+    caption = "Slope (Adjusted for DB): 39.35 | R-Squared for Linear Fit: 0.997 | MSE for Linear Fit: 0.22 | SE for Slope: 0.19"
+    )+
+  theme(
+    plot.caption = element_text(hjust = 0.5)
+  )
+
+
+```
+
+Standard Type - Attenuation DB vs Accutrac 22 Power Reading 
+
+```{r}
+attenuators <- c("none", "FAMP-3", "FAMP-6", "S-FAMP-9", "FAMP-10", "S-FAMP-12", "S-FAMP-13" , "S-FAMP-16")
+power_val <- c(29.7, 16.3, 5.4, 2.71, 2.64, 2.58, 2.53, 2.5)
+attn_val <- c(0, -3, -6, -9, -10, -12, -13, -16)
+solar_attenuation <- data.frame(attenuators, power_val, attn_val)
+
+
+filtered_data <- solar_attenuation %>% filter(row_number() <= 3)
+lm_model <- lm(power_val ~ attn_val, data = filtered_data)
+
+
+coefficients <- coef(lm_model)
+print(paste("Intercept of the linear model:", coefficients[1]))
+print(paste("Slope of the linear model:", coefficients[2]))
+
+
+
+summary_lm <- summary(lm_model)
+r_squared <- summary_lm$r.squared
+print(paste("R-squared of the linear model:", r_squared))
+
+predictions <- predict(lm_model, filtered_data)
+mse <- mean((filtered_data$power_val - predictions)^2)
+print(paste("MSE of the linear model:", mse))
+
+std_error <- summary_lm$coefficients[, "Std. Error"]
+print(std_error)
+
+
+ggplot(data = solar_attenuation, mapping = aes(x = attn_val, y = power_val)) +
+  geom_point() +
+  geom_smooth(data = filtered_data, method = "lm", aes(x = attn_val, y = power_val))+
+  labs(
+    x = "Attenuation Value in DB",
+    y = "Power Reading on Accutrac",
+    title = "Figure 4 - FAMP Attenuators vs Accutrac 22 Power Reading",
+    caption = sprintf("Slope (Adjusted for DB): 40.5 | R-Squared for Linear Fit: 0.996 | MSE For Linear Fit: 0.347 | SE for the Slope: 0.24")
+    )+
+  theme(
+    plot.caption = element_text(hjust = 0.5)
+  )
+```
+
+Sun Values & Calibration Values
+
+```{r}
+
+power_bailey <- c(9.4, 9.5, 9.1, 9.3, 9.3)
+sun_mean <- mean(power_bailey)
+sun_sd <- sd(power_bailey)
+
+print("sun mean:")
+print(sun_mean)
+print("sun sd")
+print(sun_sd)
+
+power_reading_lab <- c(23.5, 23.6, 23.5, 23.5, 23.6)
+ln_mean <-mean(power_reading_lab)
+ln_sd <- sd(power_reading_lab)
+
+print("Liquid Nitrogen Mean")
+print(ln_mean)
+print("Liquid Nitrogen Standard Deviation")
+print(ln_sd)
+
+
+calib_none <- c(30, 30, 30.2, 30.1, 30, 30, 30, 30.1, 30, 30, 29.9, 30, 30, 30, 30, 30, 30, 29.9, 30, 30, 30)
+calib_none_sd <- sd(calib_none)
+print(calib_none_sd)
+
+
+
+
+```
+Patio: Diffraction Patter with "error bars"
+
+```{r}
+library(ggplot2)
+
+# Your original data
+deg <- c(0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 17, 17, 17, 18, 18, 19, 19, 20, 20, 20, 20, 20, 21, 21, 21, 21, 22, 22, 22, 23, 23, 24, 24, 25, 25, 25, 26, 26, 26, 27, 27, 27, 28, 28, 28, 28, 29, 29, 29, 30, 30, 31, 31, 31, 32, 32, 33, 33, 33, 34, 34, 34, 34, 35, 35, 35, 36, 36, 36, 36, 37, 37, 37, 38, 38, 38, 39, 39, 39, 39, 40, 40, 40, 41, 41, 41, 42, 42, 42)
+val <- c(5.2, 5.4, 5.5, 5.2, 5.5, 5.7, 6.5, 5.4, 5.9, 6.0, 5.2, 5.3, 5.3, 5.4, 6.0, 6.0, 6.5, 5.5, 5.4, 5.5, 5.4, 5.4, 5.5, 5.7, 5.8, 9.3, 6.0, 5.9, 8.3, 6.1, 6.3, 6.1, 6.9, 7.0, 7.3, 7.5, 7.6, 7.8, 7.4, 8.4, 10.1, 8.5, 9.9, 10.1, 9.8, 9.9, 13.7, 13.9, 15.5, 22.3, 26.2, 34, 41.1, 44.1, 44.6, 50.4, 52.3, 52.5, 56.1, 56.8, 57.1, 56.3, 56.7, 55.9, 52.7, 52.6, 52.4, 44.3, 41.1, 33.5, 33.7, 30.7, 25.1, 25, 23.4, 20.7, 20.5, 19.7, 17.6, 18.2, 16.5, 17.1, 16.7, 17.5, 21, 21.3, 24.3, 24.8, 25.7, 26.4, 25.9, 26.1, 22.7, 22.5, 20.7, 16.3, 16.2, 15.4, 10.4, 7.6, 6.9, 5.8, 5.6, 5.1, 5.0, 5.3, 5.3, 5.1, 5.3, 5.1, 5.0, 5.4, 5.3, 5.2, 5.9, 5.3, 6.3, 5.5, 5.7, 5.5, 5.6, 5.3, 5.5, 5.1, 5.2)
+
+# Manually set the desired height and width for rectangles
+height <- 0.66  # Replace with your desired height
+width <- 0.1   # Replace with your desired width
+
+dif_data <- data.frame(deg, val, 
+                       xmin = deg - width / 2, xmax = deg + width / 2, 
+                       ymin = val - height / 2, ymax = val + height / 2)
+
+ggplot(data = dif_data) +
+  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax), color = "black") +
+  labs(
+    title = "Figure 6 Diffraction Pattern of Satellite with Sun Interference",
+    x = "Degrees of Scan",
+    y = "Accutrac Reading",
+    caption = "Accutrac Uncertainty: +/- 0.33, Degrees of Scan Uncertainty: +/- 0.05")+
+  theme(
+    plot.caption = element_text(hjust = 0.5)
+  )
+
+
+
+
+
+```
+
+Distribution of Blanksky Values
+
+```{r}
+library(ggplot2)
+
+blanksky_data <- c(5.8, 5.6, 5.1, 5.0, 5.3, 5.1, 5.3, 5.1, 5.0, 5.4, 5.3, 5.2, 5.9, 5.3, 6.3, 5.5, 5.7, 5.5, 5.6, 5.3, 5.5, 5.1, 5.2, 5.0, 5.7, 5.1, 5.0, 5.2, 5.4, 5.5, 5.2, 5.3, 5.2, 5.1, 5.4, 5.5, 5.7, 5.2, 5.4, 5.9, 5.2, 6.0, 5.2, 5.3, 5.4, 6.0, 6.5, 5.5, 5.4, 5.5)
+blanksky_powervals <- data.frame(value = blanksky_data)
+filtered_data <- subset(blanksky_powervals, value <= 5.6)
+
+# Calculating mean and sd for the original data
+blanksky_mean <- mean(blanksky_data)
+blanksky_sd <- sd(blanksky_data)
+
+# Calculating mean and sd for the filtered data
+filtered_mean <- mean(filtered_data$value)
+filtered_sd <- sd(filtered_data$value)
+
+# Shapiro-Wilk test result
+shapiro_result <- shapiro.test(blanksky_data)
+
+# Plot with corrected code
+ggplot(data = blanksky_powervals, aes(x = value)) +
+  geom_histogram(aes(y = ..density..), binwidth = 0.1, colour = "black", fill = "white") +
+  stat_function(fun = dnorm, args = list(mean = blanksky_mean, sd = blanksky_sd), aes(colour = "Normal Distribution Fit"), size = 1) +
+  stat_function(fun = dnorm, args = list(mean = filtered_mean, sd = filtered_sd), aes(colour = "Hypothetical Curve"), size = 1) +
+  scale_colour_manual(values = c("Normal Distribution Fit" = "red", "Hypothetical Curve" = "blue"),
+                      breaks = c("Normal Distribution Fit", "Hypothetical Curve")) +
+  scale_x_continuous(breaks = seq(5.0, 6.6, by = 0.2)) +
+  labs(
+    title = "Figure 3 - Distribution of Blank Sky Power Readings",
+    x = "Power Reading on Accutrac",
+    y = "Density",
+    caption = sprintf("Mean: %.2f | SD: %.2f | Shapiro-Wilk W: %.4f, p-value: %.4f", 
+                      blanksky_mean, blanksky_sd, shapiro_result$statistic, shapiro_result$p.value)
+  ) +
+  theme(
+    legend.position = "bottom",
+    plot.caption = element_text(hjust = 0.5)
+  ) +
+  guides(colour = guide_legend(title = "Distribution", order = 1, reverse = FALSE))
+
+
+```
+
+Uncertainty of Noise Temp (Liquid Nitrogen)
+
+```{r}
+
+# Load necessary package
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean and sd with actual values for each variable
+L_samples <- rnorm(n, mean = 77, sd = 0)
+R_samples <- rnorm(n, mean = 290, sd = 0)
+D_samples <- rnorm(n, mean = 23.54, sd = 0.08)
+a_samples <- rnorm(n, mean = 29.71, sd = 0.08)
+b_samples <- rnorm(n, mean = 39.35, sd = 0.19)
+
+# Function to calculate N
+calculate_N <- function(L, R, D, a, b) {
+  x <- 10^((D - a) / b)
+  N <- (L - R * x) / (x - 1)
+  return(N)
+}
+
+# Calculate N for each set of samples
+N_samples <- mapply(calculate_N, L_samples, R_samples, D_samples, a_samples, b_samples)
+
+# Analyze the results
+summary_stats <- data.frame(N_samples) %>%
+  summarise(Mean = mean(N_samples),
+            SD = sd(N_samples),
+            Lower_95_CI = quantile(N_samples, 0.025),
+            Upper_95_CI = quantile(N_samples, 0.975))
+
+print(summary_stats)
+
+
+```
+
+Uncertainty of Noise Temp (Blank Sky)
+
+```{r}
+# Load necessary package
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean and sd with actual values for each variable
+L_samples <- rnorm(n, mean = 3, sd = 0)
+R_samples <- rnorm(n, mean = 290, sd = 0)
+D_samples <- rnorm(n, mean = 5.42, sd = 0.33)
+a_samples <- rnorm(n, mean = 29.71, sd = 0.08)
+b_samples <- rnorm(n, mean = 39.35, sd = 0.19)
+
+# Function to calculate N
+calculate_N <- function(L, R, D, a, b) {
+  x <- 10^((D - a) / b)
+  N <- (L - R * x) / (x - 1)
+  return(N)
+}
+
+# Calculate N for each set of samples
+N_samples <- mapply(calculate_N, L_samples, R_samples, D_samples, a_samples, b_samples)
+
+# Analyze the results
+summary_stats <- data.frame(N_samples) %>%
+  summarise(Mean = mean(N_samples),
+            SD = sd(N_samples),
+            Lower_95_CI = quantile(N_samples, 0.025),
+            Upper_95_CI = quantile(N_samples, 0.975))
+
+print(summary_stats)
+
+
+
+```
+
+Uncertainty of Sun Temp (Using Liquid Nitrogen Noise Temperature)
+
+```{r}
+
+# Load necessary package
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean and sd with actual values for each variable
+R_samples <- rnorm(n, mean = 290, sd = 0)
+N_samples <- rnorm(n, mean = 412.97, sd = 11.05)
+D_samples <- rnorm(n, mean = 9.32, sd = 0.33)
+a_samples <- rnorm(n, mean = 29.71, sd = 0.08)
+b_samples <- rnorm(n, mean = 39.35, sd = 0.19)
+
+# Function to calculate T
+calculate_T <- function(R, N, D, a, b) {
+  x <- 10^((D - a) / b)
+  T <- R * x + N * x - N
+  return(T)
+}
+
+# Calculate T for each set of samples
+T_samples <- mapply(calculate_T, R_samples, N_samples, D_samples, a_samples, b_samples)
+
+# Analyze the results
+summary_stats <- data.frame(T_samples) %>%
+  summarise(Mean = mean(T_samples),
+            SD = sd(T_samples),
+            Lower_95_CI = quantile(T_samples, 0.025),
+            Upper_95_CI = quantile(T_samples, 0.975))
+
+print(summary_stats)
+
+
+
+```
+
+Uncertainty of Sun Temp (Using Blank Sky Noise Temperature)
+
+```{r}
+
+# Load necessary package
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean and sd with actual values for each variable
+R_samples <- rnorm(n, mean = 290, sd = 0)
+N_samples <- rnorm(n, mean = 88.17, sd = 2.52)
+D_samples <- rnorm(n, mean = 9.32, sd = 0.33)
+a_samples <- rnorm(n, mean = 29.71, sd = 0.08)
+b_samples <- rnorm(n, mean = 39.35, sd = 0.19)
+
+# Function to calculate T
+calculate_T <- function(R, N, D, a, b) {
+  x <- 10^((D - a) / b)
+  T <- R * x + N * x - N
+  return(T)
+}
+
+# Calculate T for each set of samples
+T_samples <- mapply(calculate_T, R_samples, N_samples, D_samples, a_samples, b_samples)
+
+# Analyze the results
+summary_stats <- data.frame(T_samples) %>%
+  summarise(Mean = mean(T_samples),
+            SD = sd(T_samples),
+            Lower_95_CI = quantile(T_samples, 0.025),
+            Upper_95_CI = quantile(T_samples, 0.975))
+
+print(summary_stats)
+
+
+
+```
+
+Final Uncertainty (Blank Sky Noise Temperature)
+
+```{r}
+# Load necessary packages
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require('purrr')) install.packages('purrr'); library('purrr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean_S, sd_S, mean_B, sd_B, mean_C, sd_C, mean_D, sd_D with actual values
+S_samples <- rnorm(n, mean = 26.45, sd = 2.95)
+B_samples <- rnorm(n, mean = 0.0000679, sd = 0)
+C_samples <- rnorm(n, mean = 3, sd = 0)
+D_samples <- rnorm(n, mean = 0.4572, sd = .015)
+
+# Calculate T for each set of samples
+calculate_T <- function(S, B, C, D) {
+  R <- asin(1.22 * (0.025 / D))
+  A <- pi * (R^2)
+  T <- ((S * A) - (C * (A - B))) / B
+  return(T)
+}
+
+# Use mapply to vectorize the calculation over the samples
+T_samples <- mapply(calculate_T, S_samples, B_samples, C_samples, D_samples)
+
+# Analyze the results
+summary_stats <- data.frame(T_samples) %>%
+  summarise(Mean = mean(T_samples),
+            SD = sd(T_samples),
+            Lower_95_CI = quantile(T_samples, 0.025),
+            Upper_95_CI = quantile(T_samples, 0.975))
+
+print(summary_stats)
+
+
+
+
+
+
+```
+
+Final Uncertainty (Liquid Nitrogen Noise Temperature)
+
+```{r}
+# Load necessary packages
+if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
+if (!require('purrr')) install.packages('purrr'); library('purrr')
+
+# Number of Monte Carlo iterations
+n <- 10000
+
+# Assuming normal distributions for all variables
+# Replace mean_S, sd_S, mean_B, sd_B, mean_C, sd_C, mean_D, sd_D with actual values
+S_samples <- rnorm(n, mean = -200, sd = 8.92)
+B_samples <- rnorm(n, mean = 0.0000679, sd = 0)
+C_samples <- rnorm(n, mean = 3, sd = 0)
+D_samples <- rnorm(n, mean = 0.4572, sd = .015)
+
+# Calculate T for each set of samples
+calculate_T <- function(S, B, C, D) {
+  R <- asin(1.22 * (0.025 / D))
+  A <- pi * (R^2)
+  T <- ((S * A) - (C * (A - B))) / B
+  return(T)
+}
+
+# Use mapply to vectorize the calculation over the samples
+T_samples <- mapply(calculate_T, S_samples, B_samples, C_samples, D_samples)
+
+# Analyze the results
+summary_stats <- data.frame(T_samples) %>%
+  summarise(Mean = mean(T_samples),
+            SD = sd(T_samples),
+            Lower_95_CI = quantile(T_samples, 0.025),
+            Upper_95_CI = quantile(T_samples, 0.975))
+
+print(summary_stats)
+
+
+```
+
+Sensitivity Analysis (Failure)
+
+```{r}
+set.seed(123) # For reproducibility
+
+n <- 10000 # Sample size for the analysis
+
+# Generating baseline samples
+R_samples <- rnorm(n, 290, 0)
+L_samples <- rnorm(n, 77, 0)
+D_samples <- rnorm(n, 0.4572, 0.015)
+M_samples <- rnorm(n, 5.42, 0.33)
+v_samples <- rnorm(n, 9.32, 0.33)
+a_samples <- rnorm(n, 29.71, 0.08)
+b_samples <- rnorm(n, 39.35, 0.19)
+
+# Define the functions based on the given formulas
+calculate_Q <- function(D) {
+  asin(1.22 * (0.025 / D))
+}
+
+calculate_x <- function(M, a, b) {
+  10 ^ ((M - a) / b)
+}
+
+calculate_y <- function(v, a, b) {
+  10 ^ ((v - a) / b)
+}
+
+calculate_N <- function(L, R, x) {
+  (L - R * x) / (x - 1)
+}
+
+calculate_Z <- function(R, y, N) {
+  R * y + N * y - N
+}
+
+calculate_A <- function(Q) {
+  pi * (Q^2)
+}
+
+calculate_F <- function(Z, A) {
+  (Z * A - 3 * (A - (6.79 * 10^(-5)))) / (6.79 * 10^(-5))
+}
+
+# Calculate baseline F
+baseline_Q <- calculate_Q(D_samples)
+baseline_x <- calculate_x(M_samples, a_samples, b_samples)
+baseline_y <- calculate_y(v_samples, a_samples, b_samples)
+baseline_N <- calculate_N(L_samples, R_samples, baseline_x)
+baseline_Z <- calculate_Z(R_samples, baseline_y, baseline_N)
+baseline_A <- calculate_A(baseline_Q)
+baseline_F <- calculate_F(baseline_Z, baseline_A)
+
+# Function to perturb a variable and calculate the change in F
+perturb_and_calculate_change <- function(variable_name, perturbation) {
+  if (variable_name == "D") {
+    new_Q <- calculate_Q(D_samples + perturbation)
+    new_A <- calculate_A(new_Q)
+    new_F <- calculate_F(baseline_Z, new_A)
+  } else if (variable_name == "M" || variable_name == "a" || variable_name == "b") {
+    new_x <- calculate_x(M_samples + ifelse(variable_name == "M", perturbation, 0), 
+                         a_samples + ifelse(variable_name == "a", perturbation, 0), 
+                         b_samples + ifelse(variable_name == "b", perturbation, 0))
+    new_N <- calculate_N(L_samples, R_samples, new_x)
+    new_Z <- calculate_Z(R_samples, baseline_y, new_N)
+    new_F <- calculate_F(new_Z, baseline_A)
+  } else if (variable_name == "v") {
+    new_y <- calculate_y(v_samples + perturbation, a_samples, b_samples)
+    new_Z <- calculate_Z(R_samples, new_y, baseline_N)
+    new_F <- calculate_F(new_Z, baseline_A)
+  } else if (variable_name == "R" || variable_name == "L") {
+    new_N <- calculate_N(L_samples + ifelse(variable_name == "L", perturbation, 0), 
+                         R_samples + ifelse(variable_name == "R", perturbation, 0), 
+                         baseline_x)
+    new_Z <- calculate_Z(R_samples + ifelse(variable_name == "R", perturbation, 0), 
+                         baseline_y, new_N)
+    new_F <- calculate_F(new_Z, baseline_A)
+  }
+  
+  return(mean(abs(new_F - baseline_F) / baseline_F))
+}
+
+# Sensitivity analysis for each variable
+variables <- c("D", "M", "v", "a", "b", "R", "L")
+sensitivities <- sapply(variables, function(var) {
+  perturbation <- if (var == "D") 0.01 * mean(D_samples) else 0.01
+  perturb_and_calculate_change(var, perturbation)
+})
+
+names(sensitivities) <- variables
+sensitivities
+
+```
