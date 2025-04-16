@@ -2,6 +2,8 @@
 
 This repository contains code, data, and documentation for a project in which a **TV antenna** was used as a telescope to measure the **temperature of the Sun**. The experiment is based on **solar radiometry**, leveraging radio frequency signals from the Sun to estimate its thermal properties.
 
+The final report for this project is accessible [here](Solar_Radiometry.pdf)
+
 ---
 
 ## 🔥 Project Overview
